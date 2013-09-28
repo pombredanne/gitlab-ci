@@ -8,7 +8,7 @@ def linux_only(require_as)
   RUBY_PLATFORM.include?('linux') && require_as
 end
 
-gem 'rails', '3.2.12'
+gem 'rails', '3.2.14'
 
 # DB
 gem 'mysql2', group: :mysql
@@ -17,12 +17,8 @@ gem 'pg',     group: :postgres
 # Settings
 gem 'settingslogic'
 
-# Auth
-gem 'devise'
-
 # Web server
-gem 'thin'
-gem "unicorn", "~> 4.4.0"
+gem "puma", "~> 2.3.2"
 
 # Haml
 gem 'haml-rails'
@@ -30,7 +26,7 @@ gem 'haml-rails'
 # Background jobs
 gem 'slim'
 gem 'sinatra', :require => nil
-gem 'sidekiq', '2.6.4'
+gem 'sidekiq'
 
 # Scheduled
 gem 'whenever', require: false
@@ -38,23 +34,23 @@ gem 'whenever', require: false
 # Format dates
 gem 'stamp'
 
-# Git support
-gem 'grit'
-
 # Pagination
 gem 'kaminari'
 
 # State machine
 gem 'state_machine'
 
-# Encoding detection
-gem 'charlock_holmes'
+# For API calls
+gem 'httparty', '0.11.0'
+
+# API
+gem 'grape'
+gem 'grape-entity'
 
 # Other
 gem 'rake'
 gem 'foreman'
 gem 'jquery-rails'
-gem 'childprocess'
 gem 'gitlab_ci_meta'
 
 group :assets do
@@ -64,6 +60,7 @@ group :assets do
   gem 'uglifier', '>= 1.0.3'
   gem "therubyracer"
   gem 'bootstrap-sass'
+  gem "font-awesome-sass-rails"
 end
 
 
@@ -77,6 +74,7 @@ group :development, :test do
   gem 'pry'
   gem 'rspec-rails'
   gem 'capybara'
+  gem 'poltergeist'
   gem 'factory_girl_rails'
   gem "ffaker"
 
@@ -85,4 +83,8 @@ group :development, :test do
   gem 'rb-fsevent', require: darwin_only('rb-fsevent')
   gem 'growl',      require: darwin_only('growl')
   gem 'rb-inotify', require: linux_only('rb-inotify')
+
+  gem "simplecov", require: false
+  gem 'coveralls', require: false
+  gem 'minitest', '4.3.2'
 end

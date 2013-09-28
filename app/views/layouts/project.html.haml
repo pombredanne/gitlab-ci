@@ -1,0 +1,48 @@
+!!! 5
+%html{ lang: "en"}
+  = render 'layouts/head'
+  %body
+    = render 'layouts/nav'
+    = render 'layouts/info'
+    .container-fluid
+      %h3.project-title
+        Project: #{@project.name}
+        - if @project.public
+          %small
+            %i.icon-globe
+            Public
+
+        - if @project.gitlab_url.present?
+          .pull-right
+            = link_to 'View on GitLab', @project.gitlab_url, class: 'btn'
+    %hr
+    .container-fluid
+      .row-fluid
+        - if current_user
+          .span2
+            %ul.nav.nav-tabs.nav-stacked
+              = nav_link path: 'projects#show' do
+                = link_to project_path(@project) do
+                  %i.icon-list-alt
+                  Builds
+                  %small.pull-right= @project.builds.count
+              = nav_link path: 'projects#charts' do
+                = link_to charts_project_path(@project) do
+                  %i.icon-bar-chart
+                  Charts
+              = nav_link controller: :runner_projects do
+                = link_to project_runner_projects_path(@project) do
+                  %i.icon-cog
+                  Runners
+                  %small.pull-right= @project.runner_projects.count
+              = nav_link path: 'projects#integration' do
+                = link_to integration_project_path(@project) do
+                  %i.icon-wrench
+                  Integration
+              = nav_link path: 'projects#edit' do
+                = link_to edit_project_path(@project) do
+                  %i.icon-edit
+                  Settings
+        .span10
+          = yield
+    = render 'layouts/foot'

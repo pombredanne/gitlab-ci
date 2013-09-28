@@ -1,33 +1,44 @@
-class User < ActiveRecord::Base
-  # Include default devise modules. Others available are:
-  # :token_authenticatable, :confirmable,
-  # :lockable, :timeoutable and :omniauthable
-  devise :database_authenticatable, :recoverable, :rememberable, :trackable, :validatable
+# User object is stored in session
+class User
+  attr_reader :attributes
 
-  # Setup accessible (or protected) attributes for your model
-  attr_accessible :email, :password, :password_confirmation, :remember_me
+  def initialize(hash)
+    @attributes = hash
+  end
 
-  def admin?
-    true
+  def gitlab_projects(page = 1, per_page = 100)
+    Rails.cache.fetch(cache_key(page, per_page)) do
+      Project.from_gitlab(self, page, per_page, :authorized)
+    end
+  end
+
+  def method_missing(meth, *args, &block)
+    if attributes.has_key?(meth.to_s)
+      attributes[meth.to_s]
+    else
+      super
+    end
+  end
+
+  def cache_key(*args)
+    "#{self.id}:#{args.join(":")}:#{sync_at.to_s}"
+  end
+
+  def sync_at
+    @sync_at ||= Time.now
+  end
+
+  def reset_cache
+    @sync_at = Time.now
+  end
+
+  def can_access_project?(project_gitlab_id)
+    opts = {
+      private_token: self.private_token,
+    }
+
+    Rails.cache.fetch(cache_key(project_gitlab_id, sync_at)) do
+      !!Network.new.project(self.url, opts, project_gitlab_id)
+    end
   end
 end
-
-# == Schema Information
-#
-# Table name: users
-#
-#  id                     :integer(4)      not null, primary key
-#  email                  :string(255)     default(""), not null
-#  encrypted_password     :string(255)     default(""), not null
-#  reset_password_token   :string(255)
-#  reset_password_sent_at :datetime
-#  remember_created_at    :datetime
-#  sign_in_count          :integer(4)      default(0)
-#  current_sign_in_at     :datetime
-#  last_sign_in_at        :datetime
-#  current_sign_in_ip     :string(255)
-#  last_sign_in_ip        :string(255)
-#  created_at             :datetime        not null
-#  updated_at             :datetime        not null
-#
-

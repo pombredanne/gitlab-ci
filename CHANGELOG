@@ -1,3 +1,38 @@
+v3.2.0
+  - Limit visibility of projects by gitlab authorized projects
+  - Use one page for both gitlab and gitlab-ci projects
+
+v3.1.0
+  - Login with both username, email or LDAP credentials (if GitLab 6.0+)
+  - Retry build button functionality
+  - UI fixes for resolution 1366px and lower
+  - Fix gravatar ssl warning
+
+v3.0.0
+  - Build running functionality extracted in gitlab-ci-runner
+  - Added API for runners and builds
+  - Redesigned application
+  - Added charts
+  - Use GitLab auth
+  - Add projects via UI with few clicks
+
+v2.2.0
+  - replaced unicorn with puma
+  - replaced grit with rugged
+  - Runner.rb more transactional safe now (see https://github.com/gitlabhq/gitlab-ci/pull/142)
+  - updated rails to 3.2.13
+  - updated devise to 2.2
+  - fixed issue when build left in running status if exception triggered
+  - rescue build timeout correctly
+  - badge helper with markdown & html
+  - increased test coverage to 85%
+ 
+v2.1.0
+  - Removed horizontal scroll for build trace
+  - new status badges
+  - better encode
+  - added several CI_* env variables
+
 v2.0.0
   - Replace resque with sidekiq
   - Run only one build at time per project
