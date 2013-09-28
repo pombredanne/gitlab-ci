@@ -1,7 +1,7 @@
 class BuildsController < ApplicationController
   before_filter :authenticate_user!, except: [:status]
   before_filter :project
-  before_filter :authenticate_token!, only: [:build]
+  before_filter :authorize_access_project!, except: [:status]
 
   def show
     @builds = builds
@@ -16,6 +16,19 @@ class BuildsController < ApplicationController
     raise ActiveRecord::RecordNotFound unless @build
 
     @builds = @builds.page(params[:page]).per(20)
+  end
+
+  def retry
+    @build = builds.limit(1).first
+
+    build = project.builds.create(
+      sha: @build.sha,
+      before_sha: @build.before_sha,
+      push_data: @build.push_data,
+      ref: @build.ref
+    )
+
+    redirect_to project_build_path(project, build)
   end
 
   def status

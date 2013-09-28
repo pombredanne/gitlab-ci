@@ -1,23 +1,28 @@
+if ENV['TRAVIS']
+  require 'coveralls'
+  Coveralls.wear!
+else
+  require 'simplecov'
+  SimpleCov.start
+end
+
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 ENV["RAILS_ENV"] ||= 'test'
 require File.expand_path("../../config/environment", __FILE__)
 require 'rspec/rails'
 require 'rspec/autorun'
 require 'sidekiq/testing/inline'
+require 'capybara/poltergeist'
+
+Capybara.javascript_driver = :poltergeist
+Capybara.default_wait_time = 10
 
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
 Dir[Rails.root.join("spec/support/**/*.rb")].each {|f| require f}
 
-
-test_repo_path = Rails.root.join('tmp', 'test_repo')
-
-unless File.exists?(test_repo_path)
-  `git clone https://github.com/randx/six.git #{test_repo_path}`
-end
-
 RSpec.configure do |config|
-  config.include LoginHelpers, type: :request
+  config.include LoginHelpers, type: :feature
 
   # ## Mock Framework
   #

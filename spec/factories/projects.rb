@@ -1,18 +1,16 @@
 # Read about factories at https://github.com/thoughtbot/factory_girl
 
 FactoryGirl.define do
-  factory :project do
-    name Faker::Name.name
-    token 'iPWx6WM4lhHNedGfBpPJNP'
-    default_ref 'master'
-    path Rails.root.join('tmp', 'test_repo').to_s
-    scripts 'ls'
-  end
-
   factory :project_without_token, class: Project do
-    name Faker::Name.name
+    name 'GitLab / gitlab-shell'
     default_ref 'master'
-    path Rails.root.join('tmp', 'test_repo').to_s
+    gitlab_url 'http://demo.gitlabhq.com/gitlab/gitlab-shell'
+    ssh_url_to_repo 'git@demo.gitlab.com:gitlab/gitlab-shell.git'
+    gitlab_id 8
     scripts 'ls'
+
+    factory :project do
+      token 'iPWx6WM4lhHNedGfBpPJNP'
+    end
   end
 end

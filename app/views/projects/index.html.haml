@@ -1,31 +1,13 @@
-%h3 Projects
-- @projects.each do |project|
-  - last_build = project.last_build
-  .project_box
-    .title
-      = link_to project do
-        %strong= project.name
-    .alert{class: project_statuc_class(project) }
-      - if last_build
-        #{last_build.status} (#{build_link(last_build)})
-        .right
-          = time_ago_in_words project.last_build_date
-          ago
-      - else
-        No builds yet
-    .body
-      - if current_user
-        = link_to 'Builds', project_path(project), class: 'btn btn-small'
-        %a.btn.btn-small{href: edit_project_path(project)}
-          %i.icon-edit.icon-white
-          Edit
+- if current_user
+  = content_for :title do
+    %h3.project-title
+      GitLab projects
 
-      - if project.public
-        %span.pull-right
-          %i.icon-globe
-          Public
-.clearfix
-= paginate @projects
-- if @projects.empty?
-  .alert
-    No projects yet
+  .projects
+    %p.fetch-status.light
+      %i.icon-refresh.icon-spin
+      Please wait while we fetch from GitLab (#{current_user.url})
+  :javascript
+    $.get("#{gitlab_projects_path}")
+- else
+  = render 'public'

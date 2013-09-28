@@ -1,47 +1,66 @@
-require 'runner'
-
 class ProjectsController < ApplicationController
   before_filter :authenticate_user!, except: [:build, :status, :index, :show]
-  before_filter :project, only: [:build, :details, :show, :status, :edit, :update, :destroy, :stats]
+  before_filter :project, only: [:build, :integration, :show, :status, :edit, :update, :destroy, :charts]
+  before_filter :authorize_access_project!, except: [:build, :gitlab, :status, :index, :show, :new, :create]
   before_filter :authenticate_token!, only: [:build]
+  before_filter :no_cache, only: [:status]
+
+  layout 'project', except: [:index, :gitlab]
 
   def index
-    @projects = Project.order('id DESC')
-    @projects = @projects.public unless current_user
-    @projects  = @projects.page(params[:page]).per(20)
+    @projects = Project.public.page(params[:page]) unless current_user
+  end
+
+  def gitlab
+    current_user.reset_cache if params[:reset_cache]
+    @page = (params[:page] || 1).to_i
+    @per_page = 100
+    @gl_projects = current_user.gitlab_projects(@page, @per_page)
+    @projects = Project.where(gitlab_id: @gl_projects.map(&:id)).order('name ASC')
+    @total_count = @gl_projects.size
+    @gl_projects.reject! { |gl_project| @projects.map(&:gitlab_id).include?(gl_project.id) }
+  rescue
+    @error = 'Failed to fetch GitLab projects'
   end
 
   def show
-    unless @project.public || current_user
-      authenticate_user! and return
+    unless @project.public
+      authenticate_user!
+      authorize_access_project!
     end
 
     @ref = params[:ref]
 
-
     @builds = @project.builds
     @builds = @builds.where(ref: @ref) if @ref
-    @builds = @builds.latest_sha.order('id DESC').page(params[:page]).per(20)
+    @builds = @builds.order('id DESC').page(params[:page]).per(20)
   end
 
-  def details
-  end
-
-  def new
-    @project = Project.new
-  end
-
-  def edit
+  def integration
   end
 
   def create
-    @project = Project.new(params[:project])
+    project = YAML.load(params[:project])
+
+    params = {
+      name: project.name_with_namespace,
+      gitlab_id: project.id,
+      gitlab_url: project.web_url,
+      scripts: 'ls -la',
+      default_ref: project.default_branch || 'master',
+      ssh_url_to_repo: project.ssh_url_to_repo
+    }
+
+    @project = Project.new(params)
 
     if @project.save
-      redirect_to @project, notice: 'Project was successfully created.'
+      redirect_to project_path(@project, show_guide: true), notice: 'Project was successfully created.'
     else
-      render action: "new"
+      redirect_to :back, alert: 'Cannot save project'
     end
+  end
+
+  def edit
   end
 
   def update
@@ -58,18 +77,6 @@ class ProjectsController < ApplicationController
     redirect_to projects_url
   end
 
-  def run
-    @project = Project.find(params[:id])
-    @build = @project.register_build(ref: params[:ref])
-
-    if @build and @build.id
-      Runner.perform_async(@build.id) unless @build.ci_skip?
-      redirect_to project_build_path(@project, @build)
-    else
-      redirect_to project_path(@project), notice: 'Branch is not defined for this project'
-    end
-  end
-
   def build
    # Ignore remove branch push
    return head(200) if params[:after] =~ /^00000000/
@@ -84,11 +91,12 @@ class ProjectsController < ApplicationController
    @build = @project.register_build(build_params)
 
    if @build
-     Runner.perform_async(@build.id)
      head 200
    else
      head 500
    end
+  rescue
+    head 500
   end
 
   # Project status badge
@@ -105,13 +113,23 @@ class ProjectsController < ApplicationController
     send_file Rails.root.join('public', image_name), filename: image_name, disposition: 'inline'
   end
 
-  def stats
-
+  def charts
+    @charts = {}
+    @charts[:week] = Charts::WeekChart.new(@project)
+    @charts[:month] = Charts::MonthChart.new(@project)
+    @charts[:year] = Charts::YearChart.new(@project)
   end
+
 
   protected
 
   def project
     @project ||= Project.find(params[:id])
+  end
+
+  def no_cache
+    response.headers["Cache-Control"] = "no-cache, no-store, max-age=0, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "Fri, 01 Jan 1990 00:00:00 GMT"
   end
 end
